@@ -1,0 +1,27 @@
+{
+    "description":"nocode project"
+    ,"schedules":[]
+    ,"program":{
+        "test/1":{
+            "title":"테스트API"
+            ,"allowip":"*"
+            ,"method":"GET,POST,DELETE"
+            ,"params":{
+                "userid":"[*string]아이디"
+                ,"name":"[string]이름"
+                ,"age":"[int]나이"
+                ,"gender":"[M/F]성별"
+            }
+            ,"request":{
+            }
+            ,"response":{
+            }
+            ,"process":{
+                "var1":"[sql]SELECT RIGHT(content,1) as NO1 FROM board WHERE seq={:params.seq}"
+                ,"var2":"[sql]SELECT seq FROM board WHERE seq={:var1[0].NO1}"
+                ,"var3":"[sql]SELECT RIGHT(content,1) as NO1 FROM board WHERE seq={:params.seq}"
+            }
+            ,"return":"{:var2[0].seq}"
+        }
+    }
+}

@@ -1,0 +1,2 @@
+https://smaivnn.tistory.com/2
+> node index.js
