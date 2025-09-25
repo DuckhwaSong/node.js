@@ -77,28 +77,39 @@ module.exports = async function (fastify, opts) {
 
     let replyData={
       resp: 'all',
-      method: request.method,
-      path: request.url,
-      query: request.query,
-      body: request.body,
+      request : {
+        method: request.method,
+        path: request.url,
+        query: request.query,
+        body: request.body,
+      },      
       files: files,
       formdatas: formdatas,
     };
-    //return replyData;
-    return reply.view('index.html', replyData);
+    
+    //return reply.view('index.html', replyData);
 
     // 템플릿파일 있는경우 html로 반환
-    fs.access(path.join(__dirname, 'template')+request.url+'.html', fs.constants.F_OK, (err) => {
+    const templateFile = path.join(__dirname, 'template')+request.url+'.html';
+    if (fs.existsSync(templateFile)) {
+      console.log('파일이 존재합니다.');
+      replyData=reply.view('index.html', replyData); // template/index.html을 렌더링합니다.
+    } else {
+      console.log('파일이 존재하지 않습니다.');
+      console.log(replyData);
+    }
+
+    /*fs.access(path.join(__dirname, 'template')+request.url+'.html', fs.constants.F_OK, (err) => {
     if (err) {
       console.error('파일이 존재하지 않거나 접근할 수 없습니다:', err);
-      // 데이터를 리턴
-      return replyData;
+      console.log(replyData);
     } else {
       console.log('파일이 존재합니다.');
-      //return reply.view('index.html', replyData); // template/index.html을 렌더링합니다.
-      return replyData;
+      
     }
-    });
+    });*/
+
+    return replyData;
   });
 }
 
