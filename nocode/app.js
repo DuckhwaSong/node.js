@@ -5,11 +5,42 @@ const AutoLoad = require('@fastify/autoload')
 const multipart = require('@fastify/multipart') // 폼데이터를 사용하기 위함.
 const corelib = require('./lib/core.class.js')
 const fs = require('fs');
+const fastifyCookie = require('@fastify/cookie');
+const fastifySession = require('@fastify/session');
 
 // Pass --options via CLI arguments in command to enable these options.
 const options = {}
 
+// lib 디렉토리의 모든 모듈을 로드함
+function moduleLoad(dirPath='lib'){
+  const directoryPath = path.join(__dirname, dirPath); // 로드할 디렉터리 경로
+  const modules = {}; // 로드된 모듈을 저장할 객체
+
+  try {
+    // 디렉터리 내용을 동기적으로 읽기
+    const files = fs.readdirSync(directoryPath);
+
+    files.forEach(file => {
+      // .js 파일만 필터링
+      if (file.endsWith('.js')) {
+        const moduleName = path.basename(file, '.js');
+        const filePath = path.join(directoryPath, file);
+        
+        // 런타임에 파일 로드 (require)
+        modules[moduleName] = require(filePath);
+        
+        console.log(`모듈 로드됨: ${moduleName}`);
+      }
+    });
+  } catch (err) {
+    console.error('디렉터리 파일을 읽는 중 오류 발생:', err);
+  }
+  return modules;
+}
+
 module.exports = async function (fastify, opts) {
+  const libModules = moduleLoad();
+  console.log(libModules);
   // Place here your custom code!
 
   // Do not touch the following lines
@@ -37,7 +68,23 @@ module.exports = async function (fastify, opts) {
     root: path.join(__dirname, 'template'), // EJS 템플릿 파일들이 저장된 폴더 경로
     viewExt: 'html', // 기본 확장자 설정 (EJS 파일이 .html 확장자를 가진다고 가정)
     includeViewExtension: true, // 뷰 확장자를 포함할지 여부
-  });    
+  });  
+
+  // 1. 쿠키 플러그인 등록
+  fastify.register(fastifyCookie);
+
+  // 2. 세션 플러그인 등록
+  fastify.register(fastifySession, {
+    secret: 'your-secret-key-must-be-at-least-thirty-two-characters-long',  // 💡 32자 이상의 무작위 문자열을 사용해야 합니다.
+    cookie: {
+      // 보안을 위해 HTTPS 환경에서는 true로 설정하는 것이 좋습니다.
+      secure: false, 
+      maxAge: 86400000 // 세션 만료 시간 (예: 24시간 = 86400000ms)
+    },
+    // saveUninitialized: true (기본값)는 세션을 수정하지 않아도 저장합니다.
+    // EU 쿠키법 준수나 저장 공간 절약을 위해 false로 설정할 수 있습니다.
+    saveUninitialized: false, 
+  });
 
   fastify.route({
     method: ['GET', 'POST', 'PUT', 'DELETE', 'PATCH', 'OPTIONS'],
@@ -63,6 +110,7 @@ module.exports = async function (fastify, opts) {
     const parts = request.parts(); // 여러 필드/파일 순회
     const formdatas = {};
     const files = [];
+    //rawHeaders / referer
     
 
     // 폼데이터 처리
@@ -78,10 +126,14 @@ module.exports = async function (fastify, opts) {
     let replyData={
       resp: 'all',
       request : {
+        //reqAllData: reqAllData,
         method: request.method,
-        path: request.url,
+        path: request.url.split('?')[0],
+        referer: request.headers.referer,
         query: request.query,
+        //headers: request.headers,
         body: request.body,
+        session : request.session,
       },      
       files: files,
       formdatas: formdatas,
@@ -89,26 +141,10 @@ module.exports = async function (fastify, opts) {
     
     //return reply.view('index.html', replyData);
 
-    // 템플릿파일 있는경우 html로 반환
-    const templateFile = path.join(__dirname, 'template')+request.url+'.html';
-    if (fs.existsSync(templateFile)) {
-      console.log('파일이 존재합니다.');
-      replyData=reply.view('index.html', replyData); // template/index.html을 렌더링합니다.
-    } else {
-      console.log('파일이 존재하지 않습니다.');
-      console.log(replyData);
-    }
-
-    /*fs.access(path.join(__dirname, 'template')+request.url+'.html', fs.constants.F_OK, (err) => {
-    if (err) {
-      console.error('파일이 존재하지 않거나 접근할 수 없습니다:', err);
-      console.log(replyData);
-    } else {
-      console.log('파일이 존재합니다.');
-      
-    }
-    });*/
-
+    // 템플릿파일 있는경우 html로 반환 / 없는경우 json 반환
+    //const templateFile = path.join(__dirname, 'template')+request.url+'.html';
+    //if (fs.existsSync(templateFile)) replyData=reply.view('index.html', replyData); // template/index.html을 렌더링합니다.
+        
     return replyData;
   });
 }
