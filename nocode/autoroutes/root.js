@@ -1,9 +1,9 @@
 'use strict'
 
 module.exports = async function (fastify, opts) {
-  fastify.get('/', async function (request, reply) {
+  /*fastify.get('/', async function (request, reply) {
     return { root: true }
-  });
+  });*/
 
   // '/data'에 대한 POST 요청을 처리하는 라우트 핸들러 정의
   fastify.get('/data/:id', async (request, reply) => {

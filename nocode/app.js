@@ -7,6 +7,25 @@ const corelib = require('./lib/core.class.js')
 const fs = require('fs');
 const fastifyCookie = require('@fastify/cookie');
 const fastifySession = require('@fastify/session');
+const ejs = require('ejs');
+const fastify = require('fastify')({ logger: true });
+
+
+const mysql = require('mysql2');
+// 데이터베이스 연결 설정
+const pool = mysql.createPool({
+  host: 'localhost',      // MySQL 서버 주소
+  user: 'nocode',  // 사용자 이름
+  password: 'nocode12!@', // 비밀번호
+  database: 'nocode', // 사용할 데이터베이스 이름
+  waitForConnections: true, // 풀에 연결이 없을 때 대기할지 여부
+  connectionLimit: 10,      // ⭐ 최대 연결 개수 (가장 중요한 설정)
+  queueLimit: 0,            // 연결 대기 큐의 최대 크기 (0은 무제한)
+  port: 3366, // 기본 포트는 생략 가능
+});
+const promisePool = pool.promise();
+module.exports = promisePool;
+
 
 // Pass --options via CLI arguments in command to enable these options.
 const options = {}
@@ -54,16 +73,22 @@ module.exports = async function (fastify, opts) {
   })
 
   // 오토로드 라우트 처리
-  /*fastify.register(AutoLoad, {
+ /*fastify.register(AutoLoad, {
     dir: path.join(__dirname, 'autoroutes'),
     options: Object.assign({}, opts)
   })*/
   
 
+  // 서비스 등록
+  fastify.register(AutoLoad, {
+    dir: path.join(__dirname, 'services'),
+    options: Object.assign({}, opts)
+  })  
+
   // @fastify/view 플러그인 등록
   fastify.register(require('@fastify/view'), {
     engine: { // 사용할 엔진 설정
-      ejs: require('ejs'), // EJS 엔진 등록
+      ejs: ejs, // EJS 엔진 등록
     },
     root: path.join(__dirname, 'template'), // EJS 템플릿 파일들이 저장된 폴더 경로
     viewExt: 'html', // 기본 확장자 설정 (EJS 파일이 .html 확장자를 가진다고 가정)
@@ -85,6 +110,21 @@ module.exports = async function (fastify, opts) {
     // EU 쿠키법 준수나 저장 공간 절약을 위해 false로 설정할 수 있습니다.
     saveUninitialized: false, 
   });
+
+  // 💡 @fastify/mysql 플러그인 등록
+  fastify.register(require('@fastify/mysql'), {
+    // Pool 옵션: 커넥션 풀 관련 설정을 여기에 넣습니다.
+    promise: true,         // ⭐ Promise 기반 API 사용 설정 (권장)
+    connectionLimit: 10,   // 최대 연결 개수 (Pool 핵심 설정)
+    host: 'localhost',
+    user: 'nocode',
+    password: 'nocode12!@',
+    database: 'nocode',
+    waitForConnections: true, // 풀에 연결이 없을 때 대기할지 여부
+    connectionLimit: 10,      // ⭐ 최대 연결 개수 (가장 중요한 설정)
+    queueLimit: 0,            // 연결 대기 큐의 최대 크기 (0은 무제한)
+    port: 3366, // 기본 포트는 생략 가능    
+  });  
 
   fastify.route({
     method: ['GET', 'POST', 'PUT', 'DELETE', 'PATCH', 'OPTIONS'],
@@ -122,13 +162,14 @@ module.exports = async function (fastify, opts) {
         else formdatas[part.fieldname] = part.value; // 일반 폼필드 처리
       }
     }
-
+    let uriPath=request.url.split('?')[0];  //쿼리를 제외한 path만 처리
+    if(uriPath=='/') uriPath='/index';    // url루트로 들어온 경우 index로 치환
     let replyData={
       resp: 'all',
       request : {
         //reqAllData: reqAllData,
         method: request.method,
-        path: request.url.split('?')[0],
+        path: uriPath,
         referer: request.headers.referer,
         query: request.query,
         //headers: request.headers,
@@ -138,12 +179,14 @@ module.exports = async function (fastify, opts) {
       files: files,
       formdatas: formdatas,
     };
+
+    // sql 렌더링 테스트
+    //replyData.request.data = ejs.render("sql>SELECT RIGHT(content,1) as NO1 FROM board WHERE seq=<%=params.seq%>", {params: {seq:2}}); 
     
-    //return reply.view('index.html', replyData);
 
     // 템플릿파일 있는경우 html로 반환 / 없는경우 json 반환
-    //const templateFile = path.join(__dirname, 'template')+request.url+'.html';
-    //if (fs.existsSync(templateFile)) replyData=reply.view('index.html', replyData); // template/index.html을 렌더링합니다.
+    const templateFile = path.join(__dirname, 'template')+uriPath+'.html';
+    if (fs.existsSync(templateFile)) replyData=reply.view('index.html', replyData); // template/index.html을 렌더링합니다.
         
     return replyData;
   });
