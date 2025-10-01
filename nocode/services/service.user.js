@@ -10,7 +10,7 @@ fastify.get('/service/user', async (request, reply) => {
   return { receivedData: payload };
 });
 
-  // '/data'에 대한 POST 요청을 처리하는 라우트 핸들러 정의
+  // '/data'에 대한 POST 요청을 처리하는 라우트 핸들러 정의 - http://localhost:3000/service/data/user01
   fastify.get('/service/data/:id', async (request, reply) => {
     const params = request.url.split('?')[1];
     console.log(params);

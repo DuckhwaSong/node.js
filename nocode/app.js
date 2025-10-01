@@ -78,7 +78,6 @@ module.exports = async function (fastify, opts) {
     options: Object.assign({}, opts)
   })*/
   
-
   // 서비스 등록
   fastify.register(AutoLoad, {
     dir: path.join(__dirname, 'services'),
@@ -183,10 +182,13 @@ module.exports = async function (fastify, opts) {
     // sql 렌더링 테스트
     //replyData.request.data = ejs.render("sql>SELECT RIGHT(content,1) as NO1 FROM board WHERE seq=<%=params.seq%>", {params: {seq:2}}); 
     
-
     // 템플릿파일 있는경우 html로 반환 / 없는경우 json 반환
     const templateFile = path.join(__dirname, 'template')+uriPath+'.html';
-    if (fs.existsSync(templateFile)) replyData=reply.view('index.html', replyData); // template/index.html을 렌더링합니다.
+          console.log(templateFile);
+
+    if (fs.existsSync(templateFile)) {
+      replyData=reply.view(uriPath+'.html', replyData); // template/index.html을 렌더링합니다.
+    }
         
     return replyData;
   });
