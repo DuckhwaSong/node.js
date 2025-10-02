@@ -1,6 +1,19 @@
 {
     "description":"nocode project"
     ,"schedules":[]
+    ,"database" : {
+        "mysql1":{
+            "promise": true,
+            "connectionLimit": 10,
+            "host": "localhost",
+            "user": "nocode",
+            "password": "nocode12!@",
+            "database": "nocode",
+            "waitForConnections": true,
+            "queueLimit": 0,
+            "port": 3366
+        }
+    }
     ,"program":{
         "test/1":{
             "title":"테스트API"

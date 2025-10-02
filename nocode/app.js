@@ -60,6 +60,10 @@ function moduleLoad(dirPath='lib'){
 module.exports = async function (fastify, opts) {
   const libModules = moduleLoad();
   console.log(libModules);
+
+  // projectData JSON 파일 불러오기
+  const projectData = require(path.join(__dirname, "project.json"));
+    
   // Place here your custom code!
 
   // Do not touch the following lines
@@ -111,19 +115,7 @@ module.exports = async function (fastify, opts) {
   });
 
   // 💡 @fastify/mysql 플러그인 등록
-  fastify.register(require('@fastify/mysql'), {
-    // Pool 옵션: 커넥션 풀 관련 설정을 여기에 넣습니다.
-    promise: true,         // ⭐ Promise 기반 API 사용 설정 (권장)
-    connectionLimit: 10,   // 최대 연결 개수 (Pool 핵심 설정)
-    host: 'localhost',
-    user: 'nocode',
-    password: 'nocode12!@',
-    database: 'nocode',
-    waitForConnections: true, // 풀에 연결이 없을 때 대기할지 여부
-    connectionLimit: 10,      // ⭐ 최대 연결 개수 (가장 중요한 설정)
-    queueLimit: 0,            // 연결 대기 큐의 최대 크기 (0은 무제한)
-    port: 3366, // 기본 포트는 생략 가능    
-  });  
+  fastify.register(require('@fastify/mysql'), projectData.database.mysql1);  
 
   fastify.route({
     method: ['GET', 'POST', 'PUT', 'DELETE', 'PATCH', 'OPTIONS'],
@@ -138,9 +130,6 @@ module.exports = async function (fastify, opts) {
     }
   });
 
-  // projectData JSON 파일 불러오기
-  const projectData = require(path.join(__dirname, "project.json"));
-  //console.log(projectData);
 
   await fastify.register(multipart);  // 폼데이터를 사용하기 위함.
 
