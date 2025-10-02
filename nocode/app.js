@@ -10,7 +10,7 @@ const fastifySession = require('@fastify/session');
 const ejs = require('ejs');
 const fastify = require('fastify')({ logger: true });
 
-
+/*
 const mysql = require('mysql2');
 // 데이터베이스 연결 설정
 const pool = mysql.createPool({
@@ -25,7 +25,7 @@ const pool = mysql.createPool({
 });
 const promisePool = pool.promise();
 module.exports = promisePool;
-
+*/
 
 // Pass --options via CLI arguments in command to enable these options.
 const options = {}
