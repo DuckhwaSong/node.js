@@ -1,11 +1,23 @@
 <!DOCTYPE html>
 <html>
 <head>
-    <title>Fastify EJS Example</title>
+    <title>{{request.method}}</title>
 </head>
 <body>
-    <h1>Hello, <%= request.method %>!</h1>
-    <p>This is a page rendered by EJS.</p>
-    <p><%= request.data %></p>
+    <h1>{{request.method}}</h1>
+    
+    {{#if request.data}}
+        <p>로그인 상태입니다.</p>
+        <h2>목록:</h2>
+        <ul>
+            {{#each request.data}}
+                <li>{{this}}</li>
+            {{/each}}
+        </ul>
+    {{else}}
+        <p>로그아웃 상태입니다.</p>
+    {{/if}}
+
+    {{!-- Handlebars는 이 태그 내부에서 JS 코드를 실행할 수 없습니다. --}}
 </body>
 </html>

@@ -5,27 +5,9 @@ const AutoLoad = require('@fastify/autoload')
 const multipart = require('@fastify/multipart') // 폼데이터를 사용하기 위함.
 const corelib = require('./lib/core.class.js')
 const fs = require('fs');
-const fastifyCookie = require('@fastify/cookie');
-const fastifySession = require('@fastify/session');
-const ejs = require('ejs');
 const fastify = require('fastify')({ logger: true });
+const projectData = require("./project.json");  // projectData JSON 파일 불러오기
 
-/*
-const mysql = require('mysql2');
-// 데이터베이스 연결 설정
-const pool = mysql.createPool({
-  host: 'localhost',      // MySQL 서버 주소
-  user: 'nocode',  // 사용자 이름
-  password: 'nocode12!@', // 비밀번호
-  database: 'nocode', // 사용할 데이터베이스 이름
-  waitForConnections: true, // 풀에 연결이 없을 때 대기할지 여부
-  connectionLimit: 10,      // ⭐ 최대 연결 개수 (가장 중요한 설정)
-  queueLimit: 0,            // 연결 대기 큐의 최대 크기 (0은 무제한)
-  port: 3366, // 기본 포트는 생략 가능
-});
-const promisePool = pool.promise();
-module.exports = promisePool;
-*/
 
 // Pass --options via CLI arguments in command to enable these options.
 const options = {}
@@ -60,17 +42,8 @@ function moduleLoad(dirPath='lib'){
 module.exports = async function (fastify, opts) {
   const libModules = moduleLoad();
   console.log(libModules);
-
-  // projectData JSON 파일 불러오기
-  const projectData = require(path.join(__dirname, "project.json"));
     
-  // Place here your custom code!
-
-  // Do not touch the following lines
-
-  // This loads all plugins defined in plugins
-  // those should be support plugins that are reused
-  // through your application
+  // 플러그인 오토로드
   fastify.register(AutoLoad, {
     dir: path.join(__dirname, 'plugins'),
     options: Object.assign({}, opts)
@@ -82,40 +55,18 @@ module.exports = async function (fastify, opts) {
     options: Object.assign({}, opts)
   })*/
   
-  // 서비스 등록
-  fastify.register(AutoLoad, {
-    dir: path.join(__dirname, 'services'),
-    options: Object.assign({}, opts)
-  })  
-
+  // const templateEngine = require('ejs'); // EJS 엔진 등록
+  const templateEngine = require('handlebars'); // Handlebars 엔진 지정
+  const viewPath = "html";
   // @fastify/view 플러그인 등록
   fastify.register(require('@fastify/view'), {
     engine: { // 사용할 엔진 설정
-      ejs: ejs, // EJS 엔진 등록
+      handlebars: templateEngine // Handlebars 엔진 지정
     },
-    root: path.join(__dirname, 'template'), // EJS 템플릿 파일들이 저장된 폴더 경로
+    root: path.join(__dirname, viewPath), // 템플릿 파일들이 저장된 폴더 경로
     viewExt: 'html', // 기본 확장자 설정 (EJS 파일이 .html 확장자를 가진다고 가정)
     includeViewExtension: true, // 뷰 확장자를 포함할지 여부
   });  
-
-  // 1. 쿠키 플러그인 등록
-  fastify.register(fastifyCookie);
-
-  // 2. 세션 플러그인 등록
-  fastify.register(fastifySession, {
-    secret: 'your-secret-key-must-be-at-least-thirty-two-characters-long',  // 💡 32자 이상의 무작위 문자열을 사용해야 합니다.
-    cookie: {
-      // 보안을 위해 HTTPS 환경에서는 true로 설정하는 것이 좋습니다.
-      secure: false, 
-      maxAge: 86400000 // 세션 만료 시간 (예: 24시간 = 86400000ms)
-    },
-    // saveUninitialized: true (기본값)는 세션을 수정하지 않아도 저장합니다.
-    // EU 쿠키법 준수나 저장 공간 절약을 위해 false로 설정할 수 있습니다.
-    saveUninitialized: false, 
-  });
-
-  // 💡 @fastify/mysql 플러그인 등록
-  fastify.register(require('@fastify/mysql'), projectData.database.mysql1);  
 
   fastify.route({
     method: ['GET', 'POST', 'PUT', 'DELETE', 'PATCH', 'OPTIONS'],
@@ -172,7 +123,7 @@ module.exports = async function (fastify, opts) {
     //replyData.request.data = ejs.render("sql>SELECT RIGHT(content,1) as NO1 FROM board WHERE seq=<%=params.seq%>", {params: {seq:2}}); 
     
     // 템플릿파일 있는경우 html로 반환 / 없는경우 json 반환
-    const templateFile = path.join(__dirname, 'template')+uriPath+'.html';
+    const templateFile = path.join(__dirname, viewPath)+uriPath+'.html';
           console.log(templateFile);
 
     if (fs.existsSync(templateFile)) {
